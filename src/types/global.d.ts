@@ -98,7 +98,7 @@ declare global {
     export interface Window {
         deviceInfo: DeviceInfo;
         mediaElement: HTMLElement | null;
-        mediaManager: cast.framework.PlayerManager;
+        playerManager: cast.framework.PlayerManager;
         castReceiverContext: cast.framework.CastReceiverContext;
         playlist: Array<any>;
         currentPlaylistIndex: number;
