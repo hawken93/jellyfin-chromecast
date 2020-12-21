@@ -16,7 +16,6 @@ import { ProfileConditionValue } from '../api/generated/models/profile-condition
 import { deviceIds, getActiveDeviceId } from './castDevices';
 
 import {
-    hasSurroundSupport,
     hasTextTrackSupport,
     hasVP8Support,
     hasVP9Support,
@@ -28,6 +27,7 @@ import {
     getSupportedMP4AudioCodecs,
     getSupportedHLSVideoCodecs,
     getSupportedHLSAudioCodecs,
+    getSupportedSurroundCodecs,
     getSupportedWebMAudioCodecs,
     getSupportedAudioCodecs
 } from './codecSupportHelper';
@@ -89,8 +89,10 @@ function getDirectPlayProfiles(): Array<DirectPlayProfile> {
     const DirectPlayProfiles: Array<DirectPlayProfile> = [];
 
     if (currentDeviceId !== deviceIds.AUDIO) {
+        // For devices with video
         const mp4VideoCodecs = getSupportedMP4VideoCodecs();
         const mp4AudioCodecs = getSupportedMP4AudioCodecs();
+        const surroundAudioCodecs = getSupportedSurroundCodecs();
         const vpxVideoCodecs = getSupportedVPXVideoCodecs();
         const webmAudioCodecs = getSupportedWebMAudioCodecs();
 
@@ -103,6 +105,15 @@ function getDirectPlayProfiles(): Array<DirectPlayProfile> {
             });
         }
 
+        // mkv profile: surround and normal codecs
+        DirectPlayProfiles.push({
+            Container: 'mkv',
+            Type: DlnaProfileType.Video,
+            VideoCodec: mp4VideoCodecs.join(','),
+            AudioCodec: mp4AudioCodecs.concat(surroundAudioCodecs).join(',')
+        });
+
+        // HLS+MPEGTS profile
         DirectPlayProfiles.push({
             Container: 'mp4,m4v',
             Type: DlnaProfileType.Video,
@@ -266,32 +277,36 @@ function getTranscodingProfiles(): Array<TranscodingProfile> {
     const TranscodingProfiles: Array<TranscodingProfile> = [];
 
     const hlsAudioCodecs = getSupportedHLSAudioCodecs();
-    const audioChannels: number = hasSurroundSupport() ? 6 : 2;
 
     if (profileOptions.enableHls !== false) {
+        // HLS for audio only
         TranscodingProfiles.push({
             Container: 'ts',
             Type: DlnaProfileType.Audio,
             AudioCodec: hlsAudioCodecs.join(','),
             Context: EncodingContext.Streaming,
             Protocol: 'hls',
-            MaxAudioChannels: audioChannels.toString(),
+            // only 2ch supported for audio
+            MaxAudioChannels: '2',
             MinSegments: 1,
             BreakOnNonKeyFrames: false
         });
     }
 
     const supportedAudio = getSupportedAudioCodecs();
+    const surroundCodecs = getSupportedSurroundCodecs();
 
     // audio only profiles here
     for (const audioFormat of supportedAudio) {
+        // direct download audio
         TranscodingProfiles.push({
             Container: audioFormat,
             Type: DlnaProfileType.Audio,
             AudioCodec: audioFormat,
             Context: EncodingContext.Streaming,
             Protocol: 'http',
-            MaxAudioChannels: audioChannels.toString()
+            // only 2ch supported for audio
+            MaxAudioChannels: '2'
         });
     }
 
@@ -301,22 +316,46 @@ function getTranscodingProfiles(): Array<TranscodingProfile> {
     }
 
     const hlsVideoCodecs = getSupportedHLSVideoCodecs();
-    if (
-        hlsVideoCodecs.length &&
-        hlsAudioCodecs.length &&
-        profileOptions.enableHls !== false
-    ) {
+
+    if (hlsVideoCodecs.length) {
+        if (surroundCodecs.length) {
+            // Direct streaming for passthrough codecs
+            TranscodingProfiles.push({
+                Container: 'mkv',
+                Type: DlnaProfileType.Video,
+                AudioCodec: surroundCodecs.join(','),
+                VideoCodec: hlsVideoCodecs.join(','),
+                Context: EncodingContext.Streaming,
+                Protocol: 'http',
+                MaxAudioChannels: '8'
+            });
+        }
+
+        // Direct streaming for normal codecs
         TranscodingProfiles.push({
-            Container: 'ts',
+            Container: 'mkv',
             Type: DlnaProfileType.Video,
             AudioCodec: hlsAudioCodecs.join(','),
             VideoCodec: hlsVideoCodecs.join(','),
             Context: EncodingContext.Streaming,
-            Protocol: 'hls',
-            MaxAudioChannels: audioChannels.toString(),
-            MinSegments: 1,
-            BreakOnNonKeyFrames: false
+            Protocol: 'http',
+            MaxAudioChannels: '2'
         });
+
+        if (hlsAudioCodecs.length && profileOptions.enableHls !== false) {
+            TranscodingProfiles.push({
+                Container: 'ts',
+                Type: DlnaProfileType.Video,
+                AudioCodec: hlsAudioCodecs.join(','),
+                VideoCodec: hlsVideoCodecs.join(','),
+                Context: EncodingContext.Streaming,
+                Protocol: 'hls',
+                // Only stereo for this mode
+                MaxAudioChannels: '2',
+                MinSegments: 1,
+                BreakOnNonKeyFrames: false
+            });
+        }
     }
 
     if (hasVP8Support() || hasVP9Support()) {
@@ -329,7 +368,7 @@ function getTranscodingProfiles(): Array<TranscodingProfile> {
             Protocol: 'http',
             // If audio transcoding is needed, limit channels to number of physical audio channels
             // Trying to transcode to 5 channels when there are only 2 speakers generally does not sound good
-            MaxAudioChannels: audioChannels.toString()
+            MaxAudioChannels: surroundCodecs.length ? '6' : '2'
         });
     }
 

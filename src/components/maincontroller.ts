@@ -697,7 +697,9 @@ export function createMediaInformation(
     item: BaseItemDto,
     streamInfo: any
 ): cast.framework.messages.MediaInformation {
+    console.log('streamInfo', streamInfo);
     const mediaInfo = new cast.framework.messages.MediaInformation();
+
     mediaInfo.contentId = streamInfo.url;
     mediaInfo.contentType = streamInfo.contentType;
     mediaInfo.customData = {
