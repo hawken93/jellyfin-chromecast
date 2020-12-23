@@ -19,12 +19,16 @@ import {
     hasTextTrackSupport,
     hasVP8Support,
     hasVP9Support,
+    hasHEVCSupport,
     getMaxWidthSupport,
-    getH26xProfileSupport,
-    getH26xLevelSupport,
+    getH264ProfileSupport,
+    getH264LevelSupport,
+    getHEVCProfileSupport,
+    getHEVCLevelSupport,
     getSupportedVPXVideoCodecs,
     getSupportedMP4VideoCodecs,
     getSupportedMP4AudioCodecs,
+    getSupportedmkvAudioCodecs,
     getSupportedHLSVideoCodecs,
     getSupportedHLSAudioCodecs,
     getSupportedSurroundCodecs,
@@ -103,7 +107,9 @@ function getDirectPlayProfiles(): Array<DirectPlayProfile> {
             Container: 'mkv',
             Type: DlnaProfileType.Video,
             VideoCodec: mp4VideoCodecs.join(','),
-            AudioCodec: mp4AudioCodecs.concat(surroundAudioCodecs).join(',')
+            AudioCodec: getSupportedmkvAudioCodecs()
+                .concat(surroundAudioCodecs)
+                .join(',')
         });
 
         // HLS+MPEGTS profile
@@ -179,7 +185,8 @@ function getCodecProfiles(): Array<CodecProfile> {
         return CodecProfiles;
     }
 
-    const aacConditions: CodecProfile = {
+    // TODO do this for other codecs as well.
+    CodecProfiles.push({
         Type: CodecType.VideoAudio,
         Codec: 'aac',
         Conditions: [
@@ -195,15 +202,11 @@ function getCodecProfiles(): Array<CodecProfile> {
                 '2'
             )
         ]
-    };
-
-    CodecProfiles.push(aacConditions);
+    });
 
     const maxWidth: number = getMaxWidthSupport(currentDeviceId);
-    const h26xLevel: number = getH26xLevelSupport(currentDeviceId);
-    const h26xProfile: string = getH26xProfileSupport(currentDeviceId);
 
-    const h26xConditions: CodecProfile = {
+    CodecProfiles.push({
         Type: CodecType.Video,
         Codec: 'h264',
         Conditions: [
@@ -215,12 +218,12 @@ function getCodecProfiles(): Array<CodecProfile> {
             createProfileCondition(
                 ProfileConditionValue.VideoProfile,
                 ProfileConditionType.EqualsAny,
-                h26xProfile
+                getH264ProfileSupport()
             ),
             createProfileCondition(
                 ProfileConditionValue.VideoLevel,
                 ProfileConditionType.LessThanEqual,
-                h26xLevel.toString()
+                getH264LevelSupport(currentDeviceId).toString()
             ),
             createProfileCondition(
                 ProfileConditionValue.Width,
@@ -229,9 +232,37 @@ function getCodecProfiles(): Array<CodecProfile> {
                 true
             )
         ]
-    };
+    });
 
-    CodecProfiles.push(h26xConditions);
+    if (hasHEVCSupport()) {
+        CodecProfiles.push({
+            Type: CodecType.Video,
+            Codec: 'hevc',
+            Conditions: [
+                createProfileCondition(
+                    ProfileConditionValue.IsAnamorphic,
+                    ProfileConditionType.NotEquals,
+                    'true'
+                ),
+                createProfileCondition(
+                    ProfileConditionValue.VideoProfile,
+                    ProfileConditionType.EqualsAny,
+                    getHEVCProfileSupport(currentDeviceId)
+                ),
+                createProfileCondition(
+                    ProfileConditionValue.VideoLevel,
+                    ProfileConditionType.LessThanEqual,
+                    getHEVCLevelSupport(currentDeviceId).toString()
+                ),
+                createProfileCondition(
+                    ProfileConditionValue.Width,
+                    ProfileConditionType.LessThanEqual,
+                    maxWidth.toString(),
+                    true
+                )
+            ]
+        });
+    }
 
     const videoConditions: CodecProfile = {
         Type: CodecType.Video,
@@ -329,7 +360,7 @@ function getTranscodingProfiles(): Array<TranscodingProfile> {
         TranscodingProfiles.push({
             Container: 'mkv',
             Type: DlnaProfileType.Video,
-            AudioCodec: hlsAudioCodecs.join(','),
+            AudioCodec: getSupportedmkvAudioCodecs().join(','),
             VideoCodec: hlsVideoCodecs.join(','),
             Context: EncodingContext.Streaming,
             Protocol: 'http',
