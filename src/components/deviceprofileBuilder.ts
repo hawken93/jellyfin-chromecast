@@ -72,14 +72,7 @@ function getContainerProfiles(): Array<ContainerProfile> {
  * @returns Response profiles.
  */
 function getResponseProfiles(): Array<ResponseProfile> {
-    // This seems related to DLNA, it might not be needed?
-    return [
-        {
-            Type: DlnaProfileType.Video,
-            Container: 'm4v',
-            MimeType: 'video/mp4'
-        }
-    ];
+    return [];
 }
 
 /**
@@ -318,6 +311,7 @@ function getTranscodingProfiles(): Array<TranscodingProfile> {
     const hlsVideoCodecs = getSupportedHLSVideoCodecs();
 
     if (hlsVideoCodecs.length) {
+        // We must do HLS, come on
         if (surroundCodecs.length) {
             // Direct streaming for passthrough codecs
             TranscodingProfiles.push({
