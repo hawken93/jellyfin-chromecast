@@ -185,24 +185,25 @@ function getCodecProfiles(): Array<CodecProfile> {
         return CodecProfiles;
     }
 
-    // TODO do this for other codecs as well.
-    CodecProfiles.push({
-        Type: CodecType.VideoAudio,
-        Codec: 'aac',
-        Conditions: [
-            // Not sure what secondary audio means in this context. Multiple audio tracks?
-            createProfileCondition(
-                ProfileConditionValue.IsSecondaryAudio,
-                ProfileConditionType.Equals,
-                'false'
-            ),
-            createProfileCondition(
-                ProfileConditionValue.IsSecondaryAudio,
-                ProfileConditionType.LessThanEqual,
-                '2'
-            )
-        ]
-    });
+    for (const acodec in getSupportedmkvAudioCodecs()) {
+        CodecProfiles.push({
+            Type: CodecType.VideoAudio,
+            Codec: acodec,
+            Conditions: [
+                // Not sure what secondary audio means in this context. Multiple audio tracks?
+                //createProfileCondition(
+                //    ProfileConditionValue.IsSecondaryAudio,
+                //    ProfileConditionType.Equals,
+                //    'false'
+                //),
+                createProfileCondition(
+                    ProfileConditionValue.IsSecondaryAudio,
+                    ProfileConditionType.LessThanEqual,
+                    '2'
+                )
+            ]
+        });
+    }
 
     const maxWidth: number = getMaxWidthSupport(currentDeviceId);
 
@@ -264,7 +265,9 @@ function getCodecProfiles(): Array<CodecProfile> {
         });
     }
 
-    const videoConditions: CodecProfile = {
+    // Not sure about this one, isn't it covered above? Or can we use this
+    // for common conditions?
+    CodecProfiles.push({
         Type: CodecType.Video,
         Conditions: [
             createProfileCondition(
@@ -274,11 +277,9 @@ function getCodecProfiles(): Array<CodecProfile> {
                 true
             )
         ]
-    };
+    });
 
-    CodecProfiles.push(videoConditions);
-
-    const videoAudioConditions: CodecProfile = {
+    CodecProfiles.push({
         Type: CodecType.VideoAudio,
         Conditions: [
             createProfileCondition(
@@ -287,9 +288,7 @@ function getCodecProfiles(): Array<CodecProfile> {
                 'false'
             )
         ]
-    };
-
-    CodecProfiles.push(videoAudioConditions);
+    });
 
     return CodecProfiles;
 }
