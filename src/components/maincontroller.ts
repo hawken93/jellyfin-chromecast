@@ -8,7 +8,6 @@ import {
     getShuffleItems,
     getInstantMixItems,
     translateRequestedItems,
-    extend,
     broadcastToMessageBus,
     broadcastConnectionErrorMessage
 } from '../helpers';
@@ -514,6 +513,17 @@ export function shuffle(
     });
 }
 
+/**
+ * This function fetches the full information for an item before playing it.
+ * The provided item is not complete.
+ *
+ * Old behavior: The original properties would be copied over to the fetched one,
+ * but just the fetched item should be fine
+ *
+ * @param {BaseItemDto} item Item to look up
+ * @param {any} options Extra information about how it should be played back.
+ * @returns {Promise<void>} Promise waiting for the item to be loaded for playback
+ */
 export function onStopPlayerBeforePlaybackDone(
     item: BaseItemDto,
     options: any
@@ -521,12 +531,10 @@ export function onStopPlayerBeforePlaybackDone(
     return JellyfinApi.authAjaxUser('Items/' + item.Id, {
         dataType: 'json',
         type: 'GET'
-    }).then(function (data) {
-        // Attach the custom properties we created like userId, serverAddress, itemId, etc
-        extend(data, item);
-
-        playbackMgr.playItemInternal(data, options);
-    }, broadcastConnectionErrorMessage);
+    }).then(
+        (data) => playbackMgr.playItemInternal(data, options),
+        broadcastConnectionErrorMessage
+    );
 }
 
 let lastBitrateDetect = 0;
@@ -701,6 +709,7 @@ export function createMediaInformation(
     const mediaInfo = new cast.framework.messages.MediaInformation();
     mediaInfo.contentId = streamInfo.url;
     mediaInfo.contentType = streamInfo.contentType;
+    // TODO make a type for this
     mediaInfo.customData = {
         startPositionTicks: streamInfo.startPositionTicks || 0,
         itemId: item.Id,
