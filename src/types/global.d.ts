@@ -1,12 +1,6 @@
 import { RepeatMode } from '../api/generated/models/repeat-mode';
 import { BaseItemDto } from '../api/generated/models/base-item-dto';
 
-export interface DeviceInfo {
-    deviceId: string | number;
-    deviceName: string;
-    versionNumber: string;
-}
-
 export interface GlobalScope {
     [key: string]: any;
 }
@@ -96,7 +90,6 @@ declare global {
     export const RECEIVERVERSION: string;
     export const $scope: GlobalScope;
     export interface Window {
-        deviceInfo: DeviceInfo;
         mediaElement: HTMLElement | null;
         playerManager: cast.framework.PlayerManager;
         castReceiverContext: cast.framework.CastReceiverContext;

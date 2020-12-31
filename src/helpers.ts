@@ -819,13 +819,3 @@ export function broadcastToMessageBus(message: BusMessage): void {
 export function broadcastConnectionErrorMessage(): void {
     broadcastToMessageBus({ type: 'connectionerror', message: '' });
 }
-
-/**
- * Remove all special characters from a string
- *
- * @param name input string
- * @returns string with non-whitespace non-word characters removed
- */
-export function cleanName(name: string): string {
-    return name.replace(/[^\w\s]/gi, '');
-}

@@ -389,7 +389,7 @@ export function detectBitrate(): Promise<number> {
  */
 export function stopActiveEncodings($scope: GlobalScope): Promise<void> {
     const options = {
-        deviceId: window.deviceInfo.deviceId,
+        deviceId: JellyfinApi.deviceId,
         PlaySessionId: undefined
     };
 
