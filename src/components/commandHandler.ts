@@ -19,13 +19,12 @@ import {
 
 import { reportPlaybackProgress } from './jellyfinActions';
 
-import { playbackManager } from './playbackManager';
+import { PlaybackManager } from './playbackManager';
 
 import { DocumentManager } from './documentManager';
 
 export abstract class CommandHandler {
     private static playerManager: cast.framework.PlayerManager;
-    private static playbackManager: playbackManager;
     private static supportedCommands: SupportedCommands = {
         PlayNext: CommandHandler.playNextHandler,
         PlayNow: CommandHandler.playNowHandler,
@@ -52,12 +51,8 @@ export abstract class CommandHandler {
         Unpause: CommandHandler.UnpauseHandler
     };
 
-    static configure(
-        playerManager: cast.framework.PlayerManager,
-        playbackManager: playbackManager
-    ): void {
+    static configure(playerManager: cast.framework.PlayerManager): void {
         this.playerManager = playerManager;
-        this.playbackManager = playbackManager;
     }
 
     static playNextHandler(data: DataMessage): void {
@@ -89,24 +84,18 @@ export abstract class CommandHandler {
     }
 
     static displayContentHandler(data: DataMessage): void {
-        if (!this.playbackManager.isPlaying()) {
+        if (!PlaybackManager.isPlaying()) {
             DocumentManager.showItemId((<DisplayRequest>data.options).ItemId);
         }
     }
 
     static nextTrackHandler(): void {
-        if (
-            window.playlist &&
-            window.currentPlaylistIndex < window.playlist.length - 1
-        ) {
-            this.playbackManager.playNextItem({}, true);
-        }
+        if (PlaybackManager.hasNextItem())
+            PlaybackManager.playNextItem({}, true);
     }
 
     static previousTrackHandler(): void {
-        if (window.playlist && window.currentPlaylistIndex > 0) {
-            this.playbackManager.playPreviousItem({});
-        }
+        if (PlaybackManager.hasPrevItem()) PlaybackManager.playPreviousItem({});
     }
 
     static setAudioStreamIndexHandler(data: DataMessage): void {
@@ -138,7 +127,7 @@ export abstract class CommandHandler {
     }
 
     static IdentifyHandler(): void {
-        if (!this.playbackManager.isPlaying()) {
+        if (!PlaybackManager.isPlaying()) {
             DocumentManager.startBackdropInterval();
         } else {
             // When a client connects send back the initial device state (volume etc) via a playbackstop message
