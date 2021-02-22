@@ -489,7 +489,7 @@ export function shuffle(
 }
 
 /**
- * This function fetches the full information for an item before playing it.
+ * This function fetches the full information of an item before playing it.
  * The provided item is not complete.
  *
  * Old behavior: The original properties would be copied over to the fetched one,
