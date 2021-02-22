@@ -698,12 +698,9 @@ export function createMediaInformation(
         );
     }
 
-    // wtf this breaks everything
-    // mediaInfo.customData.startPositionTicks = streamInfo.startPosition || 0;
-    // try instead:
+    // If the client actually sets startPosition:
     // if(streamInfo.startPosition)
     //     mediaInfo.customData.startPositionTicks = streamInfo.startPosition
-    // however this is likely to be unneeded
 
     return mediaInfo;
 }
