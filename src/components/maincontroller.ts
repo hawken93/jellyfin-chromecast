@@ -16,7 +16,6 @@ import {
     reportPlaybackStopped,
     play,
     getPlaybackInfo,
-    //stopActiveEncodings,
     detectBitrate
 } from './jellyfinActions';
 import { getDeviceProfile } from './deviceprofileBuilder';
@@ -490,10 +489,7 @@ export function shuffle(
 
 /**
  * This function fetches the full information of an item before playing it.
- * The provided item is not complete.
- *
- * Old behavior: The original properties would be copied over to the fetched one,
- * but just the fetched item should be fine
+ * Only item.Id needs to be set.
  *
  * @param {BaseItemDto} item Item to look up
  * @param {any} options Extra information about how it should be played back.
